@@ -63,6 +63,7 @@ configure_uploads(app, images)
 @app.route('/')
 def home():
     path = generateqr()
+    
     return render_template('home.html',path=path, name="home")
 
 @app.route('/generateqr')
@@ -92,44 +93,18 @@ def generateqr():
     newsize = (200, 200) 
     im1 = im.resize(newsize)
     im1.save(image_path)
+
     #images.save(im1)
-    return image_path
+    return send_file(file_name, mimetype='image/png')
 
 @app.route('/uploader', methods = ['GET', 'POST'])
 def upload_file1():
     if request.method == 'POST':
         filename = pdf.save(request.files['file'])
-        #print(request.files['file'])
         url1 = pdf.url(filename)
-        #print(url1)
-        #filename2 = pdf.save(request.files['image'],'htmlfi')  
-        url2=""
-        #print(url2)
-        #url2 = ""
-        return render_template("index.html",qrimg=url2,file_path=url1)
-
-# @app.route('/uploads/')
-# def uploaded_file(filename):
-#     return send_from_directory(app.config['UPLOAD_FOLDER'],
-#                                filename)
-
-# @app.route('/upload', methods=['GET', 'POST'])
-# def upload():
-#     if request.method == 'POST' and 'photo' in request.files:
-#         filename = photos.save(request.files['photo'])
-#         rec = Photo(filename=filename, user=g.user.id)
-#         rec.store()
-#         flash("Photo saved.")
-#         return redirect(url_for('show', id=rec.id))
-#     return render_template('upload.html')
-
-# @app.route('/photo/<id>')
-# def show(id):
-#     photo = Photo.load(id)
-#     if photo is None:
-#         abort(404)
-#     url = photos.url(photo.filename)
-#     return render_template('show.html', url=url, photo=photo)
+        qr = generateqr()
+        print(qr)
+        return render_template("index.html",file_path=url1)
 
 
 if __name__ == '__main__':

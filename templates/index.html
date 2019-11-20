@@ -1,6 +1,5 @@
 <!-- @model Coordinates
 @using Docusign.Models; -->
-{% block content %}
 <!doctype html>
 <html lang="en">
 <head>
@@ -24,11 +23,12 @@
     
 </head>
 <body>
+    {% block content %}
 
 
 
     <div id="droppable" class="ui-widget-header" style="position:relative;">
-        <img id="draggable" class="ui-widget-content" src="{{ qrimg }}" style="position:absolute;" />
+        <img id="draggable" class="ui-widget-content" src="/generateqr" style="position:absolute;" />
         <canvas id="the-canvas"></canvas>
     </div>
 
@@ -177,7 +177,6 @@
         });
     </script>
 
-
+{% endblock %}
 </body>
 </html>
-{% endblock %}
