@@ -28,19 +28,18 @@
 
 
     <div id="droppable" class="ui-widget-header" style="position:relative;">
-        <img id="draggable" class="ui-widget-content" src="/generateqr" style="position:absolute;" />
+        <img id="draggable" class="ui-widget-content" src="{{ session['base64str'] }}" style="position:absolute;" />
         <canvas id="the-canvas"></canvas>
     </div>
 
     <button id="prev">Previous</button>
     <button id="next">Next</button>
-    @using (Html.BeginForm())
-    {
+    <form method="POST" action="savefile" enctype = "multipart/form-data" role="form">
         <input type="hidden" id="hd_topValue" name="hd_topValue" />
         <input type="hidden" id="hd_leftValue" name="hd_leftValue" />
         <input type="hidden" id="hd_pageNumber" name="hd_pageNumber" />        
-        <input type = "submit" value = "Save" />
-    }
+        <input type = "submit" value = "save" />
+    </form>
     &nbsp; &nbsp;
     <span>Page: <span id="page_num"></span> / <span id="page_count"></span></span>
     <script src="https://code.jquery.com/jquery-1.12.4.js"></script>

@@ -14,9 +14,15 @@ from flask_uploads import UploadSet, IMAGES, configure_uploads
 from werkzeug.datastructures import FileStorage
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
+import cv2
+import numpy as np
+from flask import Flask, session
+from reportlab.pdfgen import canvas
+from PyPDF2 import PdfFileWriter, PdfFileReader
 
 
-#TOP_LEVEL_DIR = 
+
+from flask_session.__init__ import Session
 
 # Uploads
 UPLOADS_DEFAULT_DEST = '/project/static/pdf/'
@@ -27,7 +33,12 @@ UPLOADED_IMAGES_URL = 'http://localhost:5000/static/img/'
 
 app = Flask(__name__, instance_relative_config=True)
 
+app.secret_key = os.urandom(24)
+#SESSION_TYPE = 'redis'
 app.config['UPLOADED_DEFAULT_DEST'] = '/var/uploads'
+#app.secret_key = SECRET_KEY
+
+
 # Configure the image uploading via Flask-Uploads
 #images = UploadSet('images', IMAGES)
 pdf = UploadSet(extensions=('pdf','txt', 'rtf', 'odf', 'ods', 'gnumeric', 'abw', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpe', 'jpeg', 'png', 'gif', 'svg', 'bmp', 'csv', 'ini', 'json', 'plist', 'xml', 'yaml', 'yml'), default_dest=lambda app: app.instance_path)
@@ -41,30 +52,16 @@ configure_uploads(app, photos)
 images = UploadSet(extensions=('pdf','txt', 'rtf', 'odf', 'ods', 'gnumeric', 'abw', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpe', 'jpeg', 'png', 'gif', 'svg', 'bmp', 'csv', 'ini', 'json', 'plist', 'xml', 'yaml', 'yml'), default_dest=lambda app: app.instance_path)
 configure_uploads(app, images)
 
-
-#UPLOAD_FOLDER = '/home/sevenbits/Desktop/PDF-EDITOR-QR-ATTACH/project/tmp'
-#app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER 
-
-#MYDIR = os.path.dirname(lambda app: app.instance_root)
-
-
-
-
+#MYDIR = os.cwd()
+UPLOAD_FOLDER = '/home/sevenbits/Desktop/PDF-EDITOR-QR-ATTACH/project/tmp'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER 
 
 
 #media = UploadSet('media', default_dest=lambda app: app.instance_root)
 
-# class UploadForm(FlaskForm):
-#     pdffile = FileField(validators=[FileAllowed(pdf, u'pdf only!'), FileRequired(u'File was empty!')]) 
-#     photo = FileField(validators=[FileAllowed(photos, u'Image only!'), FileRequired(u'File was empty!')])
-#     submit = SubmitField(u'Upload')
-
-
 @app.route('/')
 def home():
-    path = generateqr()
-    
-    return render_template('home.html',path=path, name="home")
+    return render_template('home.html', name="home")
 
 @app.route('/generateqr')
 def generateqr():
@@ -80,11 +77,23 @@ def generateqr():
     r=requests.post(url,headers=headers)
     data=r.json()
     a=json.dumps(data['uniqueId']).strip('"')
+    qrlink = json.dumps(data['QR']).strip('"')
+    session['link'] = qrlink
+    print(qrlink)
     b=json.dumps(data['qrImage'])
+    base64src1=json.dumps(data['qrImage'])
+    print(b)
     arr = []
     arr = b.split(',')
     b1 = arr[1]
+    base64src1= base64src1.replace(".png","png")
+    base64src1=base64src1.strip('"')
+    print(base64src1)
+    session['base64str'] = base64src1
+    #d1 = session.get('base64str')
+    #print(d1)
     image = base64.b64decode(str(b1))
+    
     file_name = uuid.uuid4().hex[:50].upper()
     fileExtension = '.png'
     file_name += fileExtension
@@ -92,7 +101,13 @@ def generateqr():
     im = Image.open(io.BytesIO(image))
     newsize = (200, 200) 
     im1 = im.resize(newsize)
+
+    # nparr = np.fromstring(image.decode('base64'), np.uint8)
+    # imggg = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+    # cv2.imwrite(file_name, imggg)
+    # #im1.save('/tmp/'+image_path)
     im1.save(image_path)
+    print(file_name)
 
     #images.save(im1)
     return send_file(file_name, mimetype='image/png')
@@ -102,10 +117,57 @@ def upload_file1():
     if request.method == 'POST':
         filename = pdf.save(request.files['file'])
         url1 = pdf.url(filename)
-        qr = generateqr()
-        print(qr)
+        generateqr()
+        session['pdfurl']=url1
+        #filename2 = photos.save(request.files['image'])
+        #url2 = photos.url(filename2)
+        #qr = generateqr()
+        #print(qr)
         return render_template("index.html",file_path=url1)
+
+@app.route('/savefile', methods = ['GET', 'POST'])
+def savefile():
+    if request.method == 'POST':
+        hd_topValue = request.form.get('hd_topValue')
+        hd_leftValue =request.form.get('hd_leftValue')
+        hd_pageNumber =request.form.get('hd_pageNumber')
+        b=session.get('base64str')
+        arr = []
+        arr = b.split(',')
+        b1 = arr[1]
+        b1= b1.replace(".png","png")
+        b1=b1.strip('"')
+        image = base64.b64decode(str(b1))
+    
+        #c = canvas.Canvas(session.get('pdfurl'))
+        c = canvas.Canvas("wireframe1.pdf")
+        c.drawImage(session.get('base64str'), 0, 0)
+    #c.drawString(15, 720,"Hello World")
+        c.save()
+
+    # watermark = PdfFileReader(open("wireframe.pdf", "rb"))
+    # output_file = PdfFileWriter()
+    # input_file = PdfFileReader(open("wireframe.pdf", "rb"))
+
+    # # Number of pages in input document
+    # page_count = input_file.getNumPages()
+
+    # # Go through all the input file pages to add a watermark to them
+    # for page_number in range(page_count):
+    #     print("Watermarking page {} of {}".format(page_number, page_count))
+    #     # merge the watermark with the page
+    #     input_page = input_file.getPage(page_number)
+    #     input_page.mergePage(watermark.getPage(0))
+    #     # add page from input file to output document
+    #     output_file.addPage(input_page)
+
+    # # finally, write "output" to document-output.pdf
+    # with open("document-output.pdf", "wb") as outputStream:
+    #     output_file.write(outputStream)
+    # return output_file
+
 
 
 if __name__ == '__main__':
+    app.config['SESSION_TYPE'] = 'filesystem'
     app.run(debug=True)
