@@ -19,7 +19,7 @@ import numpy as np
 from flask import Flask, session
 from reportlab.pdfgen import canvas
 from PyPDF2 import PdfFileWriter, PdfFileReader
-
+import fitz
 
 
 from flask_session.__init__ import Session
@@ -139,32 +139,26 @@ def savefile():
         b1=b1.strip('"')
         image = base64.b64decode(str(b1))
     
-        #c = canvas.Canvas(session.get('pdfurl'))
-        c = canvas.Canvas("wireframe1.pdf")
-        c.drawImage(session.get('base64str'), 0, 0)
-    #c.drawString(15, 720,"Hello World")
-        c.save()
+        src_pdf_filename = 'download.pdf'
+        dst_pdf_filename = 'destination.pdf'
+        img_filename = 'FF72C6968A5E4A5F866445366D28C745.png'
 
-    # watermark = PdfFileReader(open("wireframe.pdf", "rb"))
-    # output_file = PdfFileWriter()
-    # input_file = PdfFileReader(open("wireframe.pdf", "rb"))
+        img_rect = fitz.Rect(hd_topValue, hd_leftValue, 0, 0)
 
-    # # Number of pages in input document
-    # page_count = input_file.getNumPages()
+        document = fitz.open(src_pdf_filename)
 
-    # # Go through all the input file pages to add a watermark to them
-    # for page_number in range(page_count):
-    #     print("Watermarking page {} of {}".format(page_number, page_count))
-    #     # merge the watermark with the page
-    #     input_page = input_file.getPage(page_number)
-    #     input_page.mergePage(watermark.getPage(0))
-    #     # add page from input file to output document
-    #     output_file.addPage(input_page)
+        # We'll put image on first page only but you could put it elsewhere
+        page = document[0]
+        page.insertImage(img_rect, filename=img_filename)
 
-    # # finally, write "output" to document-output.pdf
-    # with open("document-output.pdf", "wb") as outputStream:
-    #     output_file.write(outputStream)
-    # return output_file
+        # See http://pymupdf.readthedocs.io/en/latest/document/#Document.save and
+        # http://pymupdf.readthedocs.io/en/latest/document/#Document.saveIncr for
+        # additional parameters, especially if you want to overwrite existing PDF
+        # instead of writing new PDF
+        document.save(dst_pdf_filename)
+
+        document.close()
+
 
 
 
