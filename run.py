@@ -20,7 +20,11 @@ from flask import Flask, session
 from reportlab.pdfgen import canvas
 from PyPDF2 import PdfFileWriter, PdfFileReader
 import fitz
+from io import StringIO
 
+
+#from urllib3 import Request, urlopen
+import urllib.request
 
 from flask_session.__init__ import Session
 
@@ -28,7 +32,7 @@ from flask_session.__init__ import Session
 UPLOADS_DEFAULT_DEST = '/project/static/pdf/'
 UPLOADS_DEFAULT_URL = 'http://localhost:5000/static/pdf/'
  
-UPLOADED_IMAGES_DEST = '/project/static/img/'
+UPLOADED_IMAGES_DEST = 'static/img/'
 UPLOADED_IMAGES_URL = 'http://localhost:5000/static/img/'
 
 app = Flask(__name__, instance_relative_config=True)
@@ -79,16 +83,16 @@ def generateqr():
     a=json.dumps(data['uniqueId']).strip('"')
     qrlink = json.dumps(data['QR']).strip('"')
     session['link'] = qrlink
-    print(qrlink)
+    #print(qrlink)
     b=json.dumps(data['qrImage'])
     base64src1=json.dumps(data['qrImage'])
-    print(b)
+    #print(b)
     arr = []
     arr = b.split(',')
     b1 = arr[1]
     base64src1= base64src1.replace(".png","png")
     base64src1=base64src1.strip('"')
-    print(base64src1)
+    #print(base64src1)
     session['base64str'] = base64src1
     #d1 = session.get('base64str')
     #print(d1)
@@ -99,7 +103,7 @@ def generateqr():
     file_name += fileExtension
     image_path = file_name
     im = Image.open(io.BytesIO(image))
-    newsize = (200, 200) 
+    newsize = (100, 100) 
     im1 = im.resize(newsize)
 
     # nparr = np.fromstring(image.decode('base64'), np.uint8)
@@ -107,7 +111,7 @@ def generateqr():
     # cv2.imwrite(file_name, imggg)
     # #im1.save('/tmp/'+image_path)
     im1.save(image_path)
-    print(file_name)
+    #print(file_name)
 
     #images.save(im1)
     return send_file(file_name, mimetype='image/png')
@@ -116,6 +120,7 @@ def generateqr():
 def upload_file1():
     if request.method == 'POST':
         filename = pdf.save(request.files['file'])
+        #print(filename.)
         url1 = pdf.url(filename)
         generateqr()
         session['pdfurl']=url1
@@ -138,26 +143,29 @@ def savefile():
         b1= b1.replace(".png","png")
         b1=b1.strip('"')
         image = base64.b64decode(str(b1))
-    
-        src_pdf_filename = 'download.pdf'
-        dst_pdf_filename = 'destination.pdf'
-        img_filename = 'FF72C6968A5E4A5F866445366D28C745.png'
-
-        img_rect = fitz.Rect(hd_topValue, hd_leftValue, 0, 0)
-
-        document = fitz.open(src_pdf_filename)
-
-        # We'll put image on first page only but you could put it elsewhere
+        im = Image.open(io.BytesIO(image))
+        src_pdf_filename = session.get('pdfurl')#"static/download.pdf"#
+        dst_pdf_filename = 'static/destination.pdf'
+        src_pdf_filename.replace("http://127.0.0.1:5000/_uploads/files/","instance/")
+        remoteFile = urllib.request.urlopen(src_pdf_filename).read()
+        
+        document = fitz.open(stream=remoteFile,filetype='pdf')
+        # input1 = PdfFileReader(open(src_pdf_filename, 'rb'))
+        # print(input1.getPage(1).mediaBox)
+        # page1=input1.getPage(1)
+        # pagelenght=page1.__len__()
+        # print("page length")
+        # print(pagelenght)
+        # #len1 = pagelenght-hd_topValue-200
+        #print(len1)
         page = document[0]
-        page.insertImage(img_rect, filename=img_filename)
-
-        # See http://pymupdf.readthedocs.io/en/latest/document/#Document.save and
-        # http://pymupdf.readthedocs.io/en/latest/document/#Document.saveIncr for
-        # additional parameters, especially if you want to overwrite existing PDF
-        # instead of writing new PDF
+        x1 = sum([float(hd_leftValue),100])
+        y1 = sum([float(hd_topValue),100])
+        img_rect = fitz.Rect(hd_leftValue,hd_topValue,x1,y1)
+        page.insertImage(img_rect, stream=image,overlay = True)
         document.save(dst_pdf_filename)
-
         document.close()
+        return send_file(dst_pdf_filename)
 
 
 
