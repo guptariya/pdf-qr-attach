@@ -97,24 +97,25 @@ def generateqr():
     #d1 = session.get('base64str')
     #print(d1)
     image = base64.b64decode(str(b1))
-    
-    file_name = uuid.uuid4().hex[:50].upper()
-    fileExtension = '.png'
-    file_name += fileExtension
-    image_path = file_name
-    im = Image.open(io.BytesIO(image))
-    newsize = (100, 100) 
-    im1 = im.resize(newsize)
+    return base64src1
+
+    # file_name = uuid.uuid4().hex[:50].upper()
+    # fileExtension = '.png'
+    # file_name += fileExtension
+    # image_path = file_name
+    # im = Image.open(io.BytesIO(image))
+    # newsize = (100, 100) 
+    # im1 = im.resize(newsize)
 
     # nparr = np.fromstring(image.decode('base64'), np.uint8)
     # imggg = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
     # cv2.imwrite(file_name, imggg)
     # #im1.save('/tmp/'+image_path)
-    im1.save(image_path)
+    #im1.save(image_path)
     #print(file_name)
 
     #images.save(im1)
-    return send_file(file_name, mimetype='image/png')
+    #return send_file(file_name, mimetype='image/png')
 
 @app.route('/uploader', methods = ['GET', 'POST'])
 def upload_file1():
@@ -122,13 +123,13 @@ def upload_file1():
         filename = pdf.save(request.files['file'])
         #print(filename.)
         url1 = pdf.url(filename)
-        generateqr()
+        base64 = generateqr()
         session['pdfurl']=url1
         #filename2 = photos.save(request.files['image'])
         #url2 = photos.url(filename2)
         #qr = generateqr()
         #print(qr)
-        return render_template("index.html",file_path=url1)
+        return render_template("index.html",file_path=url1,base64 = base64)
 
 @app.route('/savefile', methods = ['GET', 'POST'])
 def savefile():
